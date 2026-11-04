@@ -1,0 +1,17 @@
+backend/.env
+backend/.env.local
+backend/.venv/
+backend/__pycache__/
+backend/*.py[cod]
+backend/cricket.db
+backend/cricket.db-shm
+backend/cricket.db-wal
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+frontend/node_modules/
+frontend/dist/
+work/*
+*.log
+.env
+.env.*
