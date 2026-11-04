@@ -20,14 +20,35 @@ async def lifespan(app):
 app = FastAPI(title='Cricket Intelligence Assistant API', version='1.0.0', lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=['*'], allow_credentials=True, allow_methods=['*'], allow_headers=['*'])
 
+@app.get('/')
+def root():
+    return {
+        'name': 'Cricket Intelligence Assistant API',
+        'status': 'healthy',
+        'version': '1.0.0',
+        'docs_url': '/docs',
+        'health_url': '/api/health'
+    }
+
+@app.get('/health')
 @app.get('/api/health')
 def health_check():
     sb = check_supabase_health()
+    try:
+        with connect() as c:
+            m = c.execute('SELECT count(*) FROM matches').fetchone()[0]
+            real = c.execute("SELECT count(*) FROM matches WHERE source<>'demo'").fetchone()[0]
+    except Exception:
+        m, real = 0, 0
     return {
         'status': 'healthy',
         'gemini': bool(os.getenv('GEMINI_API_KEY')),
         'gemini_model': os.getenv('GEMINI_MODEL', 'gemini-3.5-flash-lite'),
-        'supabase': sb
+        'supabase': sb,
+        'matches': m,
+        'historical_matches': real,
+        'demo_mode': real == 0,
+        'ai_provider': os.getenv('AI_PROVIDER', 'gemini')
     }
 
 
@@ -114,12 +135,7 @@ def get_match_by_id(match_id: str):
 
     return {**detail, 'match_prediction': match_pred}
 
-@app.get('/api/health')
-def health():
-    with connect() as c:
-        m = c.execute('SELECT count(*) FROM matches').fetchone()[0]
-        real = c.execute("SELECT count(*) FROM matches WHERE source<>'demo'").fetchone()[0]
-    return {'status': 'ok', 'matches': m, 'historical_matches': real, 'demo_mode': real == 0, 'ai_provider': os.getenv('AI_PROVIDER', 'ollama')}
+
 
 @app.get('/api/overview')
 def overview():
