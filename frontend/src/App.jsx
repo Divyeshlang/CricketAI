@@ -28,7 +28,7 @@ function App(){
        [selectedMatchDetail,setSelectedMatchDetail]=useState(null);
 
  const refreshData = ()=>{
-   Promise.all([api('/overview'),api('/players'),api('/teams'),api('/venues')])
+   Promise.all([api('/api/overview'),api('/api/players'),api('/api/teams'),api('/api/venues')])
      .then(([o,p,t,v])=>{setOverview(o);setPlayers(p.players);setTeams(t.teams);setVenues(v.venues)})
      .catch(e=>setError(e.message));
  };
@@ -37,7 +37,7 @@ function App(){
 
  useEffect(()=>{
    if(!selectedMatchId)return;
-   api('/matches/'+encodeURIComponent(selectedMatchId))
+   api('/api/matches/'+encodeURIComponent(selectedMatchId))
      .then(setSelectedMatchDetail)
      .catch(()=>setSelectedMatchDetail(null));
  },[selectedMatchId]);
@@ -92,7 +92,7 @@ function Overview({setPage, onSelectMatch, selectedMatchId}){
 
   function load(){
     setBusy(true);setErr('');
-    api('/matches')
+    api('/api/matches')
       .then(r=>{
         const list = r.matches||[];
         setMatches(list);
@@ -223,7 +223,7 @@ function MatchTrackingPage({matchId, onSelectMatch, setPage}){
   function fetchDetail(){
     if(!matchId)return;
     setBusy(true);
-    api('/matches/'+encodeURIComponent(matchId))
+    api('/api/matches/'+encodeURIComponent(matchId))
       .then(setData)
       .catch(e=>setErr(e.message))
       .finally(()=>setBusy(false));
@@ -231,7 +231,7 @@ function MatchTrackingPage({matchId, onSelectMatch, setPage}){
 
   useEffect(()=>{
     fetchDetail();
-    api('/matches').then(r=>setMatches(r.matches||[])).catch(()=>{});
+    api('/api/matches').then(r=>setMatches(r.matches||[])).catch(()=>{});
     const timer = setInterval(fetchDetail, 25000);
     return ()=>clearInterval(timer);
   },[matchId]);
@@ -389,7 +389,7 @@ function LiveMatchAIAssistant({selectedMatch, embedded=false}){
     setBusy(true);
     setErr('');
     try{
-      const r=await post('/chat/live',{
+      const r=await post('/api/chat/live',{
         question:text,
         history:messages,
         match_context:selectedMatch?{id:selectedMatch.id,team1:selectedMatch.team1,team2:selectedMatch.team2}:null
@@ -502,7 +502,7 @@ function GeneralCricketAIAssistant({players,teams}){
     setBusy(true);
     setErr('');
     try{
-      const r=await post('/chat/general',{
+      const r=await post('/api/chat/general',{
         question:text,
         history:messages
       });
@@ -601,7 +601,7 @@ function PlayerPage({players}){
   useEffect(()=>{
     if(!name){setData(null);return;}
     setBusy(true);
-    api('/players/'+encodeURIComponent(name)).then(setData).catch(e=>setError(e.message)).finally(()=>setBusy(false));
+    api('/api/players/'+encodeURIComponent(name)).then(setData).catch(e=>setError(e.message)).finally(()=>setBusy(false));
   },[name]);
 
   return <>
@@ -657,7 +657,7 @@ function PlayerCompare({players}){
   async function run(){
     if(!a||!b||a===b)return;
     setBusy(true);setError('');
-    try{setResult(await post('/players/compare',{first:a,second:b}))}catch(e){setError(e.message)}finally{setBusy(false)}
+    try{setResult(await post('/api/players/compare',{first:a,second:b}))}catch(e){setError(e.message)}finally{setBusy(false)}
   }
   useEffect(()=>{if(a&&b&&a!==b)run();},[a,b]);
 
@@ -708,7 +708,7 @@ function CompareCards({first,second,labels,keys,note}){
 function TeamCompare({teams}){
   const [a,setA]=useState(teams[0]||'India'),[b,setB]=useState(teams[1]||'Australia'),[result,setResult]=useState(null),[error,setError]=useState('');
   async function run(){
-    try{setResult(await post('/teams/compare',{first:a,second:b}));setError('')}catch(e){setError(e.message)}
+    try{setResult(await post('/api/teams/compare',{first:a,second:b}));setError('')}catch(e){setError(e.message)}
   }
   useEffect(()=>{if(a&&b&&a!==b)run();},[a,b]);
 
@@ -732,7 +732,7 @@ function TeamCompare({teams}){
 function VenuePage({venues}){
   const [v,setV]=useState(venues[0]||''),[data,setData]=useState(null),[err,setErr]=useState('');
   useEffect(()=>{
-    if(v)api('/venues/'+encodeURIComponent(v)).then(setData).catch(e=>setErr(e.message));
+    if(v)api('/api/venues/'+encodeURIComponent(v)).then(setData).catch(e=>setErr(e.message));
     else setData(null);
   },[v]);
 
@@ -779,7 +779,7 @@ function Prediction({teams}){
   const [a,setA]=useState(teams[0]||'India'),[b,setB]=useState(teams[1]||'Australia'),[data,setData]=useState(null),[error,setError]=useState(''),[busy,setBusy]=useState(false);
   async function run(){
     setBusy(true);
-    try{setData(await api(`/prediction?first=${encodeURIComponent(a)}&second=${encodeURIComponent(b)}`));setError('')}catch(e){setError(e.message)}finally{setBusy(false)}
+    try{setData(await api(`/api/prediction?first=${encodeURIComponent(a)}&second=${encodeURIComponent(b)}`));setError('')}catch(e){setError(e.message)}finally{setBusy(false)}
   }
   return <>
     <PageHeading eyebrow="EXPERIMENTAL MACHINE LEARNING" title="Match Prediction" subtitle="Trained strictly on verified historical international outcomes (Scikit-Learn)."/>
@@ -830,7 +830,7 @@ function ImportPage({onDone}){
     const body=new FormData();
     body.append('file',file);
     try{
-      const r=await api('/upload',{method:'POST',body});
+      const r=await api('/api/upload',{method:'POST',body});
       setMessage(r.message);
       onDone();
     }catch(e){
